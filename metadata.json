@@ -1,0 +1,6 @@
+{
+  "name": "TITAN FLIX — Cinema & TV Streaming",
+  "description": "A comprehensive Netflix-style streaming and discovery application with multi-language support, VidSrc API integration, responsive player, and rich media gallery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
