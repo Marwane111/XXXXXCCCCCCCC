@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TITAN API — Quick Test</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0f0d;--panel:#151a17;--accent:#ef283e;--text:#f3f5f3;--muted:#a8b0aa}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,Arial;padding:20px}main{max-width:1100px;margin:auto}h1{letter-spacing:2px}p,.muted{color:var(--muted)}input,select,button{font:inherit;padding:11px;border-radius:8px;border:1px solid #38413a;background:#101410;color:var(--text)}button{background:var(--accent);border-color:var(--accent);font-weight:700;cursor:pointer}.controls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.controls input{flex:1;min-width:180px}.status{padding:12px;background:var(--panel);border-radius:8px;margin:12px 0;white-space:pre-wrap}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}.card{background:var(--panel);border-radius:10px;overflow:hidden}.card img{width:100%;aspect-ratio:2/3;object-fit:cover;background:#202620}.card div{padding:10px}.card h3{font-size:14px;margin:0 0 5px}.card button{width:100%;margin-top:8px;font-size:12px}.player{width:100%;aspect-ratio:16/9;border:0;background:#000;border-radius:10px}.hide{display:none}a{color:#ff7b88}
+</style>
+</head>
+<body><main>
+<h1>TITAN <span style="color:var(--accent)">API TEST</span></h1>
+<p>Test catalogue, poster images, loaded-catalogue search, details and embed player. This is a separate test page and does not change your main TITAN design.</p>
+<div class="controls"><button id="loadMovies">Load movies</button><button id="loadTV">Load TV shows</button><button id="loadAll">Load both</button><input id="query" placeholder="Search loaded titles…"><select id="filter"><option value="all">All types</option><option value="movie">Movies</option><option value="tv">TV shows</option></select><button id="searchBtn">Search</button></div>
+<div id="status" class="status">Ready. Press “Load both” to test the API.</div>
+<div id="grid" class="grid"></div>
+<section id="details" class="hide"><h2 id="detailTitle">Title</h2><p id="detailInfo"></p><button id="playBtn">▶ Play</button><div style="height:12px"></div><iframe id="player" class="player" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="TITAN player"></iframe></section>
+</main><script src="TITAN_API.js"></script><script>
+const $=id=>document.getElementById(id);let allItems=[],current=null;
+function status(msg){$('status').textContent=msg}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(items){$('grid').innerHTML=items.map((x,i)=>`<article class="card"><img loading="lazy" src="${esc(TITAN_API.image(x.posterPath))}" alt="${esc(x.title)} poster" onerror="this.style.visibility='hidden'"><div><h3>${esc(x.title)}</h3><span class="muted">${esc(x.year||'Year unknown')} · ${x.type==='tv'?'TV':'Movie'}</span><button data-index="${i}">Details / Play</button></div></article>`).join('');$('grid').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>openItem(items[i]));}
+async function load(which){status('Loading data from VidSrc…');try{let items=which==='movies'?await TITAN_API.latestMovies():which==='tv'?await TITAN_API.latestTV():await TITAN_API.catalogue({pages:1});allItems=items;render(items);status(`Loaded ${items.length} titles. Search only searches titles currently loaded in this session. If you see a CORS/network error, the provider may block direct browser requests.`)}catch(e){status('API request failed: '+e.message+'\nPossible causes: network/provider unavailable or browser CORS restrictions. The API code is loaded, but the provider must allow these requests from your browser.')}}
+async function openItem(item){current=item;$('details').classList.remove('hide');$('detailTitle').textContent=item.title;$('detailInfo').textContent='Loading details…';$('player').src='about:blank';try{const d=await TITAN_API.details(item.type,item.id);$('detailInfo').textContent=[d.overview||d.description||item.overview||'No description available.',d.release_date||d.first_air_date||item.year||'',d.vote_average||d.rating||item.rating||''].filter(Boolean).join(' · ')}catch(e){$('detailInfo').textContent=(item.overview||'Details unavailable.')+' (Details endpoint: '+e.message+')'}$('playBtn').onclick=()=>{$('player').src=TITAN_API.embedURL(item.type,item.id,1,1);$('details').scrollIntoView({behavior:'smooth'})};$('details').scrollIntoView({behavior:'smooth'});}
+$('loadMovies').onclick=()=>load('movies');$('loadTV').onclick=()=>load('tv');$('loadAll').onclick=()=>load('all');$('searchBtn').onclick=()=>render(TITAN_API.search(allItems,$('query').value,$('filter').value));$('query').addEventListener('keydown',e=>{if(e.key==='Enter')$('searchBtn').click()});
+</script></body></html>
